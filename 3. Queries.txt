@@ -1,0 +1,313 @@
+----------------------------------------------------- 3. Queries -----------------------------------------------------
+
+
+- The Query Type = Query is a root operation type. It defines which fields can be retrieved from an object, enabling clients to ask exactly for the fields they need, without sending multiple requests. When writing a query, every field must be specified down to its leaf values (scalars or enums). That way, the GraphQL service knows precisely which subset of fields to return for each object. The response then includes a top-level key, which can be either
+    
+    - 'data' containing the requested objects if the query succeeded.
+    - 'errors' containing details if something went wrong.
+
+    GraphQL Service SDL
+
+        type Query {
+            hero: Character
+        }
+
+    GraphQL Client
+
+        Operation
+
+            {
+                hero {
+                    name
+                    friends {
+                        name
+                    }
+                }
+            }
+
+        Response
+
+            {
+                "data": {
+                    "hero": {
+                        "name": "R2-D2",
+                        "friends": [{
+                            "name": "Luke Skywalker"
+                        }, {
+                            "name": "Han Solo"
+                        }, {
+                            "name": "Leia Organa"
+                        }]
+                    }
+                }
+            }
+
+
+- Field Arguments = In GraphQL, every field and nested object can get its own set of arguments to filter or customize the data retrieved. Fields only accept scalar, enum, or input object types. 
+
+In the following example, the argument 'id' looks for a human with id '1000', while the argument 'unit' is an enum accepting only METER or FOOT and that is used to format the field 'height' accordingly.   
+
+    GraphQL Service SDL
+
+        type Query {
+            human(id: ID!): Human
+        }
+
+        type Human {
+            id: ID!
+            name: String!
+            height(unit: Unit): Float
+        }
+
+        enum Unit {
+            METER
+            FOOT
+        }
+
+    GraphQL Client
+
+        Operation
+
+            {
+                human(id: "1000") {
+                    name
+                    height(unit: METER)
+                }
+            }
+
+        Response
+
+            {
+               "data": {
+                    "human": {
+                        "name": "Luke Skywalker",
+                        "height": 1.72
+                    }
+                }
+            }
+
+
+- Operation Type = When defining a query operation, the keyword Query can be omitted as GraphQL will automatically infer the operation as such. However, this is not the case for mutation or subscription operations. In those instances, the keywords Mutation and Subscription must always be specified.
+
+    GraphQL Client
+
+        Operation
+
+            Explicit
+
+                Query {
+                    human(id: "1000") {
+                        name
+                        height(unit: METER)
+                    }
+                }
+
+            Implicit
+
+                {
+                    human(id: "1000") {
+                        name
+                        height(unit: METER)
+                    }
+                }
+
+
+- Operation Names = When defining an operation, it is possible to assign a name to it. This is required when sending multiple operations in one document, and useful for debugging/logging purposes.
+
+    GraphQL Client
+
+        Operation
+
+            query HeroNameAndFriends {
+                hero {
+                    name
+                    friends {
+                        name
+                    }
+                }
+            }
+
+
+- Aliases = Operations allow to define an alias for their fields, so that when object fields of the same type are specified multiple times, they can be distinguished between each other.
+
+    GraphQL Client
+
+        Operation
+
+            query {
+                empireHero: hero(episode: EMPIRE) {
+                    name
+                }
+                jediHero: hero(episode: JEDI) {
+                    name
+                }
+            }
+
+        Response
+
+            {
+               "data": {
+                    "empireHero": {
+                        "name": "Luke Skywalker"
+                    },
+                    "jediHero": {
+                        "name": "R2-D2"
+                    }
+                }
+            }
+
+
+- Variables = When a GraphQL schema defines arguments for a field, a client can supply values either directly (inline) or through variables. Variables make queries more reusable and flexible. They are always written with a $ prefix and can only be scalars, enums, or input object types.
+
+Variables are declared in parentheses after the operation name, along with their types. For example:
+
+    query getHuman($id: ID, $unit: Unit) { ... }
+
+A variable can be optional or required. Required variables are marked with an exclamation point (!) after the type. 
+
+    # here $id is required, while $unit is optional
+    query getHuman($id: ID!, $unit: Unit) { ... }
+
+You can also assign a default value by adding = <value> after the type.
+
+    # if $unit is not specified, its default value is METER
+    query getHuman($id: ID!, $unit: Unit = METER) { ... }
+
+When passing variables to a field, the syntax is identical to using literal values. For instance, human(id: $id) instead of human(id: $id).
+
+    GraphQL Service SDL
+
+        type Query {
+            human(id: ID!): Human
+        }
+
+        type Human {
+            id: ID!
+            name: String!
+            height(unit: Unit): Float
+        }
+
+        enum Unit {
+            METER
+            FOOT
+        }
+
+    GraphQL Client
+
+        Operation with Inline Values
+
+            query getHuman{
+                human(id: "1000") {
+                    name
+                    height(unit: METER)
+                }
+            }
+
+        Operation with Variables
+
+            query getHuman($id: ID, $unit: Unit){
+                human(id: $id) {
+                    name
+                    height(unit: $unit)
+                }
+            }
+
+        Response
+
+            {
+               "data": {
+                    "human": {
+                        "name": "Luke Skywalker",
+                        "height": 1.72
+                    }
+                }
+            }
+
+
+- Fragments = Fragments are defined as reusable units of fields that can be included in queries where needed. They avoid to repeat common set of fields for different objects, making a query operation more readable. Fragments are declared with teh fragment keyword, followed by a name and the type they're subsetting. To use a fragment in an operation, we just have to list fragment's name, like every other field, preceded with three dots.
+
+    query {
+        leftComparison: hero(episode: EMPIRE) {
+            ...comparisonFields
+        }
+        rightComparison: hero(episode: JEDI) {
+            ...comparisonFields
+        }
+    }
+
+    fragment comparisonFields on Character {
+        name
+        appearsIn
+        friends {
+            name
+        }
+    }
+
+
+- Fragments with Variables = Fragments are capable to access an operation's variables. They can be used right into a fragment's definition, without having to provide a declaration after the fragment's name.
+
+    query HeroComparison($first: Int = 3) {
+        leftComparison: hero(episode: EMPIRE) {
+            ...comparisonFields
+        }
+        rightComparison: hero(episode: JEDI) {
+            ...comparisonFields
+        }
+    }
+
+    fragment comparisonFields on Character {
+        name
+        friendsConnection(first: $first) {
+            totalCount
+            edges {
+                node {
+                    name
+                }
+            }
+        }
+    }
+
+
+- Inline Fragments = An inline fragment is a fragment with no name, which is both defined and used within an operation. Inline fragments are necessary when querying a union, as for each possible type we need to define the set of fields to return.
+
+    query HeroForEpisode($ep: Episode!) {
+        hero(episode: $ep) {
+            name
+            ... on Droid {
+                primaryFunction
+            }
+            ... on Human {
+                height
+            }
+        }
+    }
+
+
+- Directives = Directives are a tool to describe alternate runtime execution and type validation behavior in a GraphQL document. For example, executable directives like @if(boolean) and @skip(boolean) allow to include or skip a field only if the given condition is true. Directives provide a mean to dynamically construct the result of a query without resorting to string interpolation.
+
+    query Hero($episode: Episode, $withFriends: Boolean!) {
+        hero(episode: $episode) {
+            name
+
+            # include the field 'friends' only if the argument $withFriends is true
+            friends @include(if: $withFriends) {
+                name
+            }
+        }
+    }
+
+    query Hero($episode: Episode, $noFriends: Boolean!) {
+        hero(episode: $episode) {
+            name
+
+            # skip the field 'friends' only if the argument $noFriends is true
+            friends @skip(if: $noFriends) {
+                name
+            }
+        }
+    }
+
+
+- References:
+
+    - Queries - https://graphql.org/learn/queries/
