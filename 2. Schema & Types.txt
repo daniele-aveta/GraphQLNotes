@@ -1,0 +1,287 @@
+----------------------------------------------------- 2. Schema & Types -----------------------------------------------------
+
+
+- GraphQL Type System & Service's Schema = GraphQL type system describes what data (Types and Fields) can be queried from the API. The collection of this information is referred to as the service's schema. Clients can use the schema to have an exact description of the data they can request, while the server uses the schema to validate and execute the incoming queries against it.
+
+
+- How to Define a GraphQL Service = There are several ways to define the service's schema for a GraphQL service:
+
+    - Define Types, Fields, Resolvers = Some libraries have you construct the schema types, fields, and resolver functions together using the same programming language.
+
+    - Define Types & Fields = Some libraries allow you to define types and fields using the Schema Definition Language (SDL), and then write the resolver functions for the corresponding fields separately. 
+
+    - Define Resolvers = Some libraries allow you to write and annotate the resolver functions, and then infer the schema from that.
+
+    - Define Data Sources = Some libraries may even infer both the types and resolver functions, based on some underlying data source(s).
+
+
+- The Object Type = An object type is the most basic component of a GraphQL schema. It defines a possible object to fetch from a GraphQL service, and what fields it exhibits. In SDL, Object types are defined with the keyword 'type' followed by the object's name, and the set of fields enclosed within curly brackets. Each field is usually declared on a new line and separated by a comma or a white space. Field declarations are in the form <field_name>: <type>.
+
+    type Character {
+        name: String!               # non-null String because of !
+        appearsIn: [Episode!]!      # non-null list of Episode objects where also each element of the list is non-null
+    }
+
+
+- Field Arguments = Every field on a GraphQL Object type can have zero or more arguments. All arguments are named-based, meaning that the order in which they're passed is not relevant. Arguments can be either required or optional. When an argument is optional, we can define a default value.
+
+    type Starship {
+        id: ID!
+        name: String!
+        length(unit: LengthUnit = METER): Float     # length field accepting an argument called unit whose default value is METER
+    }
+
+
+- The Query, Mutation & Subscription Types = Query, Mutation & Subscription are root operation types, where: 
+    - The Query type allows to define a query object to read data.
+    - The Mutation type allows to define request to write/update data.
+    - The Subscription type allows to receive real-time updates via long-lived requests.
+
+    type Query {
+        droid(id: ID!): Droid   // returns a field named 'droid' of type Droid via the non-null argument 'id' of type ID
+    }
+
+Even though Query, Mutation and Subscription are root object types, they behave exactly like any other object type, and their fields work exactly the same way. The root types can also renamed like so:
+
+    schema {
+       query: MyQueryType
+        mutation: MyMutationType
+        subscription: MySubscriptionType
+    }
+
+
+- Scalar Types = GraphQL offers the following Scalar types:
+
+    - Int = A signed 32‐bit integer.
+    - Float = A signed double-precision floating-point value.
+    - String = A UTF‐8 character sequence.
+    - Boolean = true or false.
+    - ID: A unique identifier. The ID type is serialized in the same way as a String; however, defining it as an ID signifies that it is not intended to be human‐readable.
+
+
+- Custom Scalar Types = Most GraphQL implementations allow to define custom scalar types. In this scenario, it's up to our implementation to define how that type should be serialized, deserialized, and validated. For example, we could define a Date scalar type which is serialized into an integer timestamp, which implies that the client should know to expect that format for any Date field.
+
+    # define the scalar type Date
+    scalar Date
+
+
+- Enum Types = Enum types, also known as enumeration types, are a special kind of scalar that is restricted to a particular set of allowed values. In SDL, enums types are declared via the enum keyword.
+
+    enum Episode {
+        NEWHOPE
+        EMPIRE
+        JEDI
+    }
+
+
+- Type Modifiers = By default, GraphQL types are nullable and singular (non-array). However, you can apply additional modifiers to the types of a schema to affect their behavior.
+
+    - Non-Null = fields and arguments can be made non-null by adding an exclamation mark after their type. This means that when a field is marked with a non-null type and its value is null instead, GraphQL will trigger an execution error, letting the client know that something has gone wrong.
+
+        type Character {
+            name: String!   # non-null String name
+        }
+
+    - List = GraphQL allows to mark a type as list of that type. In SDL, this is denoted by wrapping the type in square brackets, [<type>].
+
+        type Character {
+            appearsIn: [Episode]    # list of Episode objects
+        }
+
+
+- Combining Type Modifiers:
+
+    - myField: [String!]
+
+        myField: null // valid
+        myField: [] // valid
+        myField: ["a", "b"] // valid
+        myField: ["a", null, "b"] // error
+
+    - myField: [String]!
+
+        myField: null // error
+        myField: [] // valid
+        myField: ["a", "b"] // valid
+        myField: ["a", null, "b"] // valid
+
+    - myField: [String!]!
+
+        myField: null // error
+        myField: [] // valid
+        myField: ["a", "b"] // valid
+        myField: ["a", null, "b"] // error
+
+
+- Interface Types = The interface type represents an abstract type, which defines a certain set of fields that a concrete Object type or other Interface type must also include to implement it. Interface types are useful when you want to return an object or set of objects, but those might be of several different types. 
+
+    interface Character {
+        id: ID!
+        name: String!
+        friends: [Character]
+        appearsIn: [Episode]!
+    }
+
+    type Human implements Character {
+        id: ID!
+        name: String!
+        friends: [Character]
+        appearsIn: [Episode]!
+        starships: [Starship]
+        totalCredits: Int
+    }
+    
+    type Droid implements Character {
+        id: ID!
+        name: String!
+        friends: [Character]
+        appearsIn: [Episode]!
+        primaryFunction: String
+    }
+
+Interface types may also implement other Interface types. Note that Interface types may not implement themselves or contain any cyclic references to each other.
+
+    interface Node {
+        id: ID!
+    }
+    
+    interface Character implements Node {
+        id: ID!
+        name: String!
+        friends: [Character]
+        appearsIn: [Episode]!
+    }
+
+
+- Union Types = A Union type is defined as a set of types, meaning that a union object can be only one of the types defined in the union. The types specified in a union don't have to share a common interface, they can even be unrelated. Because of that, when querying a union field is necessary to use an inline fragment to distinguish each object type and specify the set of fields to return. 
+
+In the following example, the union type SearchResult can be either Human, Droid, or Starship, where Human and Droid share a common interface (Character), while Starship is a completely unrelated type. Because the query already defines what should be returned for a Character object (its name), it's not necessary to repeat those fields for the sub-types Human and Droid. The response will automatically return also the Character's fields for each object of type Human and Droid. 
+
+The __typename field is a special meta-field that automatically exists on every Object type and resolves to the name of that type, providing a way to differentiate between data types on the client.
+
+    Union Definition
+
+        union SearchResult = Human | Droid | Starship
+
+    Query
+
+        {
+            search(text: "an") {
+                __typename
+                ... on Character {
+                    name
+                }
+                ... on Human {
+                    height
+                }
+                ... on Droid {
+                    primaryFunction
+                }
+                ... on Starship {
+                    name
+                    length
+                }
+            }
+        }
+
+    Response
+
+        {
+            "data": {
+                "search": [
+                    {
+                        "__typename": "Human",
+                        "name": "Han Solo",
+                        "height": 1.8
+                    },
+                    {
+                        "__typename": "Human",
+                        "name": "Leia Organa",
+                        "height": 1.5
+                    },
+                    {
+                        "__typename": "Starship",
+                        "name": "TIE Advanced x1",
+                        "length": 9.2
+                    }
+                ]
+            }
+        }
+
+
+- Input Object Types = An input object type is a type of object that can be passed as argument to fields. Fields only accept the following argument types: scalars, enums, and input object. Regular object types are not allowed. Input types are commonly used with mutations to insert or update data. To declare an input object type, we need to use the keyword 'input' instead of 'type'.
+
+    input ReviewInput {
+        stars: Int!
+        commentary: String
+    }
+    
+    type Mutation {
+        createReview(episode: Episode, review: ReviewInput!): Review
+    }
+
+
+- Directives = Directives provide a way to describe alternate runtime execution and type validation behavior in a GraphQL document. They can be used to describe additional information for types, fields, fragments and operations. They can accept arguments, and those arguments can have default values. A Directive's name is always preceded by a @. When declaring directives, we must specify where they may be used, either an executable context or a type system. The possible locations are:
+
+    ExecutableDirectiveLocation
+        QUERY
+        MUTATION
+        SUBSCRIPTION
+        FIELD
+        FRAGMENT_DEFINITION
+        FRAGMENT_SPREAD
+        INLINE_FRAGMENT
+        VARIABLE_DEFINITION
+
+    TypeSystemDirectiveLocation
+        SCHEMA
+        SCALAR
+        OBJECT
+        FIELD_DEFINITION
+        ARGUMENT_DEFINITION
+        INTERFACE
+        UNION
+        ENUM
+        ENUM_VALUE
+        INPUT_OBJECT
+        INPUT_FIELD_DEFINITION
+
+    An example of Directive declaration could look like this:
+
+        directive @deprecated(
+            reason: String = "No longer supported"
+        ) on FIELD_DEFINITION | ENUM_VALUE
+
+
+- Built-in Directives = GraphQL provides some built-in directives, for example the directive @deprecated to annotate deprecated parts of the schema.
+
+    type User {
+       fullName: String
+        name: String @deprecated(reason: "Use `fullName`.")
+    }
+
+
+- Documentation:
+
+    - Descriptions = GraphQL offers a markdown syntax to document types, fields, and arguments in a schema. Multiline descriptions are enclosed within triple double-quotes, while single line descriptions are enclosed within double-quotes. In addition to making a GraphQL API schema more expressive, descriptions are helpful to client developers as they're available in developer tools.
+
+        """
+        A character from the Star Wars universe
+        """
+        type Character {
+            "The name of the character."
+            name: String!
+        }
+
+    - Comments = Comments are just insightful notes that are not meant to document types, fields, or arguments, and to be seen by clients. These are defined with a sharp at the beginning of a line and ignored by GraphQL.
+
+        # This line is treated like whitespace and ignored by GraphQL
+        type Character {
+            name: String!
+        } 
+
+
+
+- References:
+
+    - Schemas and Types - https://graphql.org/learn/schema/
