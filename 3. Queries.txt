@@ -6,13 +6,13 @@
     - 'data' containing the requested objects if the query succeeded.
     - 'errors' containing details if something went wrong.
 
-    GraphQL Service SDL
+    Service SDL
 
         type Query {
             hero: Character
         }
 
-    GraphQL Client
+    Client
 
         Operation
 
@@ -47,7 +47,7 @@
 
 In the following example, the argument 'id' looks for a human with id '1000', while the argument 'unit' is an enum accepting only METER or FOOT and that is used to format the field 'height' accordingly.   
 
-    GraphQL Service SDL
+    Service SDL
 
         type Query {
             human(id: ID!): Human
@@ -64,7 +64,7 @@ In the following example, the argument 'id' looks for a human with id '1000', wh
             FOOT
         }
 
-    GraphQL Client
+    Client
 
         Operation
 
@@ -89,7 +89,7 @@ In the following example, the argument 'id' looks for a human with id '1000', wh
 
 - Operation Type = When defining a query operation, the keyword Query can be omitted as GraphQL will automatically infer the operation as such. However, this is not the case for mutation or subscription operations. In those instances, the keywords Mutation and Subscription must always be specified.
 
-    GraphQL Client
+    Client
 
         Operation
 
@@ -114,7 +114,7 @@ In the following example, the argument 'id' looks for a human with id '1000', wh
 
 - Operation Names = When defining an operation, it is possible to assign a name to it. This is required when sending multiple operations in one document, and useful for debugging/logging purposes.
 
-    GraphQL Client
+    Client
 
         Operation
 
@@ -130,7 +130,7 @@ In the following example, the argument 'id' looks for a human with id '1000', wh
 
 - Aliases = Operations allow to define an alias for their fields, so that when object fields of the same type are specified multiple times, they can be distinguished between each other.
 
-    GraphQL Client
+    Client
 
         Operation
 
@@ -175,7 +175,7 @@ You can also assign a default value by adding = <value> after the type.
 
 When passing variables to a field, the syntax is identical to using literal values. For instance, human(id: $id) instead of human(id: $id).
 
-    GraphQL Service SDL
+    Service SDL
 
         type Query {
             human(id: ID!): Human
@@ -192,7 +192,7 @@ When passing variables to a field, the syntax is identical to using literal valu
             FOOT
         }
 
-    GraphQL Client
+    Client
 
         Operation with Inline Values
 

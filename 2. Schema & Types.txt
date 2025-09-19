@@ -1,7 +1,33 @@
 ----------------------------------------------------- 2. Schema & Types -----------------------------------------------------
 
 
-- GraphQL Type System & Service's Schema = GraphQL type system describes what data (Types and Fields) can be queried from the API. The collection of this information is referred to as the service's schema. Clients can use the schema to have an exact description of the data they can request, while the server uses the schema to validate and execute the incoming queries against it.
+- GraphQL Service's Schema = GraphQL type system describes what data (Types and Fields) can be queried from the API. The collection of this information is referred to as the service's schema, holding the definition of: object types, input object types, enums, custom scalars, and root operation types (queries, mutations, and subscriptions). Clients can use the schema to have an exact description of the data they can request, while the server uses the schema to validate and execute the incoming queries against it.
+
+    Example Service Schema
+
+        schema {
+            query: Query
+            mutation: Mutation
+        }
+
+        type Query {
+            human(id: ID!): Human
+            droid(id: ID!): Droid
+        }
+
+        type Mutation {
+            createHuman(name: String!): Human
+        }
+
+        type Human {
+            id: ID!
+            name: String!
+        }
+
+        type Droid {
+            id: ID!
+            serial: String!
+        }
 
 
 - How to Define a GraphQL Service = There are several ways to define the service's schema for a GraphQL service:
@@ -13,6 +39,16 @@
     - Define Resolvers = Some libraries allow you to write and annotate the resolver functions, and then infer the schema from that.
 
     - Define Data Sources = Some libraries may even infer both the types and resolver functions, based on some underlying data source(s).
+
+
+- Root Operation Types vs Operations = In GraphQL, the expressions root operation types and operations are not interchangeable. 
+
+    - Root operation types are part of the GraphQL service's schema. They define the shape of possible operations: which entry points exist, what fields they expose, what arguments they accept, and what types they return. 
+    
+    - Operations are client requests. They populate those definitions with concrete arguments (literals or variables) and select specific fields to be returned.
+
+        - Root Operation Types  =>  defined by the server (schema)
+        - Operations            =>  written by the client (query documents)
 
 
 - The Object Type = An object type is the most basic component of a GraphQL schema. It defines a possible object to fetch from a GraphQL service, and what fields it exhibits. In SDL, Object types are defined with the keyword 'type' followed by the object's name, and the set of fields enclosed within curly brackets. Each field is usually declared on a new line and separated by a comma or a white space. Field declarations are in the form <field_name>: <type>.
@@ -32,7 +68,8 @@
     }
 
 
-- The Query, Mutation & Subscription Types = Query, Mutation & Subscription are root operation types, where: 
+- The Query, Mutation & Subscription Types = Query, Mutation & Subscription are root operation types, where:
+
     - The Query type allows to define a query object to read data.
     - The Mutation type allows to define request to write/update data.
     - The Subscription type allows to receive real-time updates via long-lived requests.
@@ -41,10 +78,10 @@
         droid(id: ID!): Droid   // returns a field named 'droid' of type Droid via the non-null argument 'id' of type ID
     }
 
-Even though Query, Mutation and Subscription are root object types, they behave exactly like any other object type, and their fields work exactly the same way. The root types can also renamed like so:
+Even though Query, Mutation and Subscription are root object types, they behave exactly like any other object type, and their fields work exactly the same way. The root types can also be renamed like so:
 
     schema {
-       query: MyQueryType
+        query: MyQueryType
         mutation: MyMutationType
         subscription: MySubscriptionType
     }
@@ -163,7 +200,7 @@ The __typename field is a special meta-field that automatically exists on every 
 
         union SearchResult = Human | Droid | Starship
 
-    Query
+    Operation
 
         {
             search(text: "an") {
