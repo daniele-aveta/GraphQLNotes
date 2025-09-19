@@ -43,9 +43,9 @@
 
 - Root Operation Types vs Operations = In GraphQL, the expressions root operation types and operations are not interchangeable. 
 
-    - Root operation types are part of the GraphQL service's schema. They define the shape of possible operations: which entry points exist, what fields they expose, what arguments they accept, and what types they return. 
+    - Root operation types define the API entry points in a GraphQL service's schema. They can be Query, Mutation or Subscription. Root operation types are not identified by a name; they define only which entry points exist, what fields they expose, what arguments they accept, and what types they return. This provides the structure that client operations must follow when sending requests.
     
-    - Operations are client requests. They populate those definitions with concrete arguments (literals or variables) and select specific fields to be returned.
+    - Operations are client requests. They populate those definitions with concrete arguments (literals or variables) and select specific fields to be returned. Unlike root operation types, operations may be explicitly named (e.g. query GetBooks { ... }, mutation AddBook { ... }) or be anonymous.
 
         - Root Operation Types  =>  defined by the server (schema)
         - Operations            =>  written by the client (query documents)
