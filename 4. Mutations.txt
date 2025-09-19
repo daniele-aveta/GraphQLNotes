@@ -1,0 +1,171 @@
+----------------------------------------------------- 4. Mutations -----------------------------------------------------
+
+
+- GraphQL Conventions on Side Effects = In REST, any request might cause some side-effects on the server, but by convention, it’s suggested that one doesn’t use GET requests to modify data. GraphQL is similar, as technically any field resolver could cause a data write, but the GraphQL specification states that "only the resolver functions for top-level mutation fields can write data, any other field must be side effect-free and idempotent."
+
+
+- Add New Data = GraphQL uses the root operation type Mutation as an entry point to the API to add new data. Mutations can define one or more fields representing the affected data, and like every other field, they accept arguments of type scalar, enum, or input object. As with queries, if the mutation field returns an Object type, the client operation must specify the set of fields to return.
+
+    Service Schema
+
+        enum Episode {
+            NEWHOPE
+            EMPIRE
+            JEDI
+        }
+        
+        input ReviewInput {
+            stars: Int!
+            commentary: String
+        }
+
+        type Review {
+            id: ID!
+            stars: Int!
+            commentary: String
+        }
+        
+        type Mutation {
+            # declaring the field createReview, 
+            # which returns an object of type Review, 
+            # and accepts an enum of type Episode and an input object of type ReviewInput  
+            createReview(episode: Episode, review: ReviewInput!): Review
+        }
+
+    Client
+
+        Operation
+
+            mutation CreateReviewForEpisode($ep: Episode!, $review: ReviewInput!) {
+                createReview(episode: $ep, review: $review) {
+                    stars
+                    commentary
+                }
+            }
+
+        Variables
+
+            {
+                "ep": "JEDI",
+                "review": {
+                    "stars": 5,
+                    "commentary": "This is a great movie!"
+                }
+            }
+
+        Response
+
+            {
+                "data": {
+                    "createReview": {
+                        "stars": 5,
+                        "commentary": "This is a great movie!"
+                    }
+                }
+            }
+
+
+- Update Existing Data = Like when inserting new data, mutations allow to update existing data in the same manner.
+
+    Schema Service
+
+        type Human {
+            id: ID!
+            name: String!
+        }
+
+        type Mutation {
+            updateHumanName(id: ID!, name: String!): Human
+        }
+
+    Client
+
+        Operation
+
+            mutation UpdateHumanName($id: ID!, $name: String!) { 
+                updateHumanName(id: $id, name: $name ) {
+                    id
+                    name
+                }
+            }
+
+        Variables
+
+            {
+                "id": "1000",
+                "name": "Luke Starkiller"
+            }
+
+        Response
+
+            {
+                "data": {
+                    "updateHumanName": {
+                        "id": "1000",
+                        "name": "Luke Starkiller"
+                    }
+                }
+            }
+
+
+- Delete Existing Data = Mutations can be used also to delete existing data. However, even though the GraphQL specification doesn’t indicate what should be returned from a successful deletion, we do have to specify some output type for the field in the schema. Commonly, the deleted entity’s ID or a payload object containing data about the entity will be used to indicate that the operation was successful.
+
+    Service SDL
+
+        type Mutation {
+            deleteStarship(id: ID!): ID!
+        }
+    
+    Client
+
+        Operation 
+
+            mutation DeleteStarship($id: ID!) { 
+                deleteStarship(id: $id)
+            }
+
+        Variables
+
+            {
+                "id": "3003"
+            }
+
+        Response
+
+            {
+                "data": {
+                    "deleteStarship": "3003"
+                }
+            }
+
+
+- Multiple Fields in Mutations = Like with query types, mutation can specify multiple fields. However, a very important distinction is that query fields are run in parallel, while mutation fields are executed in series. This means that if two mutations are in one request, we're guaranteed that first will finish before the second begins, ensuring no race condition between them. In the following example, multiple deletions are sent in one request with an anonymous mutation operation where each field is a mutation as well, as mutations are a valid GraphQL type.
+
+    Service SDL
+
+        type Mutation {
+            deleteStarship(id: ID!): ID!
+        }
+
+    Client
+
+        Operation
+
+            mutation { 
+                firstShip: deleteStarship(id: "3001")
+                secondShip: deleteStarship(id: "3002")
+            }
+
+        Response
+
+            {
+               "data": {
+                    "firstShip": "3001",
+                    "secondShip": "3002"
+                }
+            }
+
+
+- References:
+
+    - Mutations - https://graphql.org/learn/mutations/
