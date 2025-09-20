@@ -1,0 +1,100 @@
+----------------------------------------------------- 6. Validation -----------------------------------------------------
+
+
+- Validation = Before running a request, the GraphQL service checks that this is syntactically correct (compliant with the syntax rules of the language) and valid (compliant with the API’s schema). Sp, when a GraphQL operation reaches the server, the document is first parsed and then validated using the type system, without relying on runtime checks. Once the operation is validated, it is executed on the server, and then a response is delivered to the client.
+
+
+- Validation Errors:
+
+    - Requesting Non-Existent Fields = Requesting fields that are no present on the queried object.
+
+        # INVALID: favoriteSpaceship does not exist on Character
+        query {
+            hero {
+                favoriteSpaceship
+            }
+        }
+
+
+    - Not Selecting All The Way Down to Leaf Fields = Whenever we query for a field and it returns something other than a Scalar or Enum type, we need to specify what data we want to get back from the field (a selection set).
+
+        # INVALID: hero is not a scalar, so fields are needed
+        query {
+            hero
+        }
+
+
+    - Selecting Over a Leaf Field = Similarly, selecting fields from a scalar or enum type produces a validation error.
+
+        # INVALID: name is a scalar, so fields are not permitted
+        query {
+            hero {
+                name {
+                    firstCharacterOfName
+                }
+            }
+        }
+
+
+    - Missing Fragments on Abstract Types = When requesting fields belonging to an abstract type, they must be specified in a fragment. 
+
+        # INVALID: primaryFunction does not exist on Character
+        query {
+            hero {
+                name
+                primaryFunction
+            }
+        }
+
+        # VALID
+        query {
+            hero {
+                name
+                ...DroidFields
+            }
+        }
+
+        fragment DroidFields on Droid {
+            primaryFunction
+        }
+
+
+    - Cyclic Fragments = Fragments cannot contain self-references. This is because if a field contains another field of the same type, it would create an unbound recursive cycle.
+
+        # INVALID
+        query {
+            hero {
+                ...NameAndAppearancesAndFriends
+            }
+        }
+
+        fragment NameAndAppearancesAndFriends on Character {
+            name
+            appearsIn
+            friends {
+                ...NameAndAppearancesAndFriends
+            }
+        }
+
+        # VALID
+        query {
+            hero {
+                ...NameAndAppearances
+                friends {
+                    ...NameAndAppearances
+                    friends {
+                        ...NameAndAppearances
+                    }
+                }
+            }
+        }
+
+        fragment NameAndAppearances on Character {
+            name
+            appearsIn
+        }
+
+
+- References:
+
+    - Validation - https://graphql.org/learn/validation/
