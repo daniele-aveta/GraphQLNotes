@@ -1,0 +1,104 @@
+----------------------------------------------------- 5. Subscriptions -----------------------------------------------------
+
+
+- Subscriptions = Subscriptions are long-lived requests designed to receive real-time updates. They are defined via the subscription keyword, and, like queries and mutations, can exhibit fields. 
+
+    type Subscription {
+        reviewCreated: Review
+    }
+
+
+- Subscribing to Updates = GraphQL subscriptions are typically backed by a separate pub/sub system so that messages about updated data can be published as needed during runtime and then consumed by the resolver functions for the subscription fields in the API.
+
+In the following example, we could imagine publishing a REVIEW_CREATED message to a pub/sub system when a client submits a new review with the createReview mutation, and then listening for this event in the resolver function for the reviewCreated subscription field so that the server may send this data to subscribed clients.
+
+    Service Schema
+
+        type Subscription {
+            reviewCreated: Review
+        }
+
+        type Review {
+            id: ID!
+            stars: Int!
+            commentary: String
+        }
+        
+        input ReviewInput {
+            stars: Int!
+            commentary: String
+        }
+
+        enum Episode {
+            NEWHOPE
+            EMPIRE
+            JEDI
+        }
+
+        type Mutation {
+            createReview(episode: Episode, review: ReviewInput!): Review
+        }
+
+    Client
+
+        Operation
+
+            # notifies the client when a review is created, returning an object of type Review with the fields rating and commentary.
+            subscription NewReviewCreated {
+                reviewCreated {
+                    rating
+                    commentary
+                }
+            }
+
+
+- Subscription Type vs Subscription Operation - Field Limit = Although a Subscription type definition can have multiple fields, a subscription operation can contain only one root field.
+
+    Server Schema
+
+        type Subscription {
+            # Triggered whenever a post is added
+            postWasPublished: Post
+            
+            # Triggered whenever a comment is added;
+            # to watch a certain post, provide a `postId`
+            commentWasPublished(postId: ID): Comment
+        }
+
+    Client
+
+        Invalid Operation
+
+            subscription {
+                postWasPublished {
+                    id
+                    content
+                }
+
+                commentWasPublished {
+                    id
+                    content
+                }
+            }
+
+        Valid Operations
+
+            subscription PostWasPublished {
+                postWasPublished {
+                    id
+                    content
+                }
+            }
+
+            subscription CommentWasPublished {
+                commentWasPublished {
+                    id
+                    content
+                }
+            }
+
+
+- References:
+
+    - Subscriptions - https://graphql.org/learn/subscriptions/
+    - Subscription Types with Multiple Fields - https://graphql-ruby.org/subscriptions/subscription_type
