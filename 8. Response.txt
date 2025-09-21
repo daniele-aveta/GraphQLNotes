@@ -1,0 +1,24 @@
+----------------------------------------------------- 8. Response -----------------------------------------------------
+
+
+- Response = After a GraphQL document has been validated and executed, the server will return a response to the requesting client. One of GraphQL’s strengths is that the server response reflects the shape of the client’s original request, but a response may also contain helpful information if something unexpected happened before or during the execution of an operation.
+
+
+- The Data Keyword = When a successful request, the response's content is enclosed in a top-level key called 'data'. The 'data' key isn't an arbitrary decision, but a GraphQL Specification. Under the key, it is possible to find the full result or a partial result if errors were raised. Typically, responses are formatted in JSON and sent over HTTP protocol.
+
+
+- The Errors Keyword = When an unsuccessful request is sent, the response's content is enclosed in a top-level key called 'errors'. Errors may arise for several reasons:
+
+    - Request Errors = This sort of errors happen when the client makes a mistake, for example a syntax error. The message key inside the errors object provides some helpful information for the developer to understand what kind of error was raised, and the locations key, if present, indicates where the error occurred in the document.
+
+    - Validation Errors = Even though a request is syntactically correct, the client may ask for a field that doesn't exist or passes a value of the wrong type, resulting in a validation error when the request is validated against the service's schema.
+
+    - Field errors = Field errors are raised if something unexpected happens during execution. For example, a resolver may raise an error directly, or may return invalid data such as a null value for a field that has a Non-Null output type. In these cases, GraphQL will attempt to continue executing the other fields and return a partial response, with the data key appearing alongside the errors key.
+
+
+. The Extension Key = The final top-level key allowed by the GraphQL specification in a response is the extensions key. This key is reserved for GraphQL implementations to provide additional information about the response and though it must be an object if present, there are no other restrictions on what it may contain.
+
+
+- References:
+
+    - Response - https://graphql.org/learn/response/
