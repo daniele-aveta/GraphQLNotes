@@ -1,0 +1,186 @@
+----------------------------------------------------- 9. Introspection -----------------------------------------------------
+
+
+- Introspections = Introspection queries are special kinds of queries that allow you to learn about a GraphQL API’s schema, and they also help power GraphQL development tools.
+
+
+- Type Name Introspection - The Meta-Field __typename = The meta-field __typename returns the type's name of the enclosing field. This meta-field can be used only with an Object, Interface, or Union type. Typically, __typename is used when a Union type is returned to distinguish between all the possible types included in the union.
+
+    Operation
+
+        query {
+            search(text: "an") {
+                __typename
+                ... on Character {
+                   name
+                }
+                ... on Starship {
+                    name
+                }
+            }
+        }
+
+    Response
+
+        {
+            "data": {
+            "search": [
+                {
+                    "__typename": "Human",
+                    "name": "Han Solo"
+                },
+                {
+                    "__typename": "Human",
+                    "name": "Leia Organa"
+                },
+                {
+                    "__typename": "Starship",
+                    "name": "TIE Advanced x1"
+                }
+            ]
+        }
+    }
+
+
+- Schema introspection - The Meta-Field __schema = The meta-field __schema allows to query the service's schema and return information about it.
+
+    Operation
+
+        query {
+            __schema {
+                types {
+                    name
+                }
+            }
+        }
+
+    Response
+
+        {
+            "data": {
+                "__schema": {
+                    "types": [
+                        {
+                        "name": "Query"
+                        },
+                        {
+                        "name": "String"
+                        },
+                        {
+                        "name": "ID"
+                        },
+                        {
+                        "name": "Mutation"
+                        },
+                        {
+                        "name": "Episode"
+                        },
+                        {
+                        "name": "FilmRating"
+                        },
+                    ]
+                }
+            }
+        }
+
+
+- The Meta-Field __type = The meta-field __type allows to retrieve more information about a given type. It returns the type's name (a string), the type of object (a value of the enum __TypeKind: SCALAR, OBJECT, INTERFACE, UNION, ENUM, INPUT_OBJECT, LIST, NON_NULL), a list of its fields, and the type it derives from thanks to the meta-field __ofType.
+
+    Operation
+
+        query {
+            __type(name: "Droid") {
+                name
+                fields {
+                    name
+                    type {
+                        name
+                        kind
+                        ofType {
+                            name
+                            kind
+                        }
+                    }
+                }
+            }
+        }
+
+    Response
+
+        {
+            "data": {
+                "__type": {
+                "name": "Droid",
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": {
+                            "name": null,
+                            "kind": "NON_NULL"
+                            "ofType": {
+                                "name": "ID",
+                                "kind": "SCALAR"
+                            }
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": {
+                            "name": null,
+                            "kind": "NON_NULL"
+                            "ofType": {
+                                "name": "ID",
+                                "kind": "SCALAR"
+                            }
+                        }
+                    },
+                    {
+                        "name": "friends",
+                        "type": {
+                            "name": null,
+                            "kind": "LIST"
+                            "ofType": {
+                                "name": "Character",
+                                "kind": "INTERFACE"
+                            }
+                        }
+                    },
+                    {
+                        "name": "friendsConnection",
+                        "type": {
+                            "name": null,
+                            "kind": "NON_NULL"
+                            "ofType": {
+                                "name": "FriendsConnection",
+                                "kind": "OBJECT"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appearsIn",
+                        "type": {
+                            "name": null,
+                            "kind": "NON_NULL"
+                            "ofType": {
+                                "name": null,
+                                "kind": "LIST"
+                            }
+                        }
+                    },
+                    {
+                        "name": "primaryFunction",
+                        "type": {
+                            "name": "String",
+                            "kind": "SCALAR"
+                            "ofType": null
+                        }
+                    }
+                ]}
+            }
+        }
+ 
+
+
+- References:
+
+    - Introspection - https://graphql.org/learn/introspection/
