@@ -1,0 +1,62 @@
+----------------------------------------------------- 7. Execution -----------------------------------------------------
+
+
+- Field Resolvers = In GraphQL, each field on each type is backed by a resolver function that is written by the GraphQL server developer. When a field is executed, the corresponding resolver is called to produce the next value. If a field produces an enum or a scalar value, then the execution completes. Instead, if a field produces an object value, then the query will contain another selection of fields until the leaf values are reached.
+
+
+- Resolver Example = In this example, our Query type provides a field called human which accepts the argument id. The resolver function for this field likely accesses a database and then constructs and returns a Human type:
+
+    function resolveHumanQuery(obj, args, context, info) {
+        return context.db.loadHumanByID(args.id).then(userData => new Human(userData));
+    }
+
+This example is written in JavaScript, however GraphQL servers can be built in many different languages. In the reference implementation, a resolver function receives four arguments:
+
+    - obj: The previous object (for a field on the root Query type, this argument is often not used).
+    
+    - args: The arguments provided to the field in the GraphQL operation.
+    
+    - context: A value provided to every resolver that may hold important contextual information like the currently logged in user, or access to a database.
+    
+    - info: generally only used in advanced use-cases, this is a value holding field-specific information relevant to the current operation as well as the schema details.
+
+
+- Asynchronous Resolvers = Under the hood, resolver functions can be implemented either synchronously or asynchronously. This means that while the resolver function needs to be aware of Promises (or similar objects like Futures, Tasks, or Deferred), the GraphQL query does not. It simply expects the requested field to return something that can be further resolved to a scalar name value. During execution, GraphQL will wait for Promises to be completed before continuing, and will do so with optimal concurrency.
+
+
+- Trivial resolvers = When a resolver returns an object, GraphQL hands that object to the next resolver to continue field selection. If the requested field matches one of the object’s properties, it’s returned directly. Many GraphQL libraries even let you skip writing such trivial resolvers, defaulting to reading a property with the same name.
+
+
+- Coercion = GraphQL implicitly performs coercion when the given type returned from a resolver or provided in a request doesn't match the expected type. In these scenarios, GraphQL automatically converts the value from the given type to the expected one, as long as it does not lose information, otherwise a field error is raised.
+
+    - Enums: 
+    
+        - Input Values = For input values only the defined enum names are accepted (otherwise a request error).
+
+        - Result Values = For result coercion, the server must return one of the enum’s defined values (or something that can be coerced into it); otherwise a field error is raised. Many implementations allow the schema enum names to map to internal values (numbers, language enums, objects) and will serialize the enum as the schema name for the client.
+
+    - Custom scalars = They expose explicit hooks:
+    
+        - Input Values = parseLiteral/parseValue.
+        - Result Values = serialize/coerceResult.
+
+    - List: 
+
+        - Input Values = Input coercion has a convenience: if a non-list value is provided to a list input, it is coerced to a single-element list. Non-null wrapping enforces that coercion cannot yield null (and triggers non-null propagation rules).
+
+        - Result Values = Result coercion for a list must produce an ordered list whose items are themselves coerced according to the item type. If a non-list is returned where a list is expected, coercion should fail. 
+
+When coercion fails for a leaf or item, GraphQL adds a field error and typically returns null for that field (if the field is nullable). If the field is non-null, the error propagates up according to the spec’s non-null error rules (possibly nulling parent fields or the entire result). The engine’s CoerceResult/value completion step is what enforces these rules.
+
+    Example of Scalar Coercion:
+
+        - resolver returns 1.0 => coerce to 1 because no information is lost 
+        - resolver returns 1.2 => field error because information is lost
+
+
+- Producing the result = As each field is resolved, the resulting value is placed into a key-value map with the field name (or alias) as the key and the resolved value as the value. This continues from the bottom leaf fields of the query back up to the original field on the root Query type. Collectively these produce a structure that mirrors the original query which can then be sent (typically as JSON) to the client that requested it.
+
+
+- References:
+
+    - Execution - https://graphql.org/learn/execution/
