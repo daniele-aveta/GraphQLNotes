@@ -1,7 +1,7 @@
 ----------------------------------------------------- 6. Validation -----------------------------------------------------
 
 
-- Validation = Before running a request, the GraphQL service checks that this is syntactically correct (compliant with the syntax rules of the language) and valid (compliant with the API’s schema). Sp, when a GraphQL operation reaches the server, the document is first parsed and then validated using the type system, without relying on runtime checks. Once the operation is validated, it is executed on the server, and then a response is delivered to the client.
+- Validation = Before running a request, the GraphQL service checks that this is syntactically correct (compliant with the syntax rules of the language) and valid (compliant with the API’s schema). So, when a GraphQL operation reaches the server, the document is first parsed and then validated using the type system, without relying on runtime checks. Once the operation is validated, it is executed on the server, and then a response is delivered to the client.
 
 
 - Validation Errors:
